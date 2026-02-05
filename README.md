@@ -1,4 +1,4 @@
-# Smart Send Slaude plugin
+# Smart Send AI plugin for Claude
 
 Smart Send Plugin for Claude providing detailed shipping capabilities.
 
