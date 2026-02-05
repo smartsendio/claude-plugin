@@ -1,0 +1,12 @@
+{
+  "name": "smartsend",
+  "description": "Ship parcels with Smart Send — book shipments, compare rates, track packages, and manage service points across multiple carriers.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Smart Send"
+  },
+  "homepage": "https://smartsend.io",
+  "repository": "https://github.com/smartsend/claude-plugin",
+  "license": "MIT",
+  "keywords": ["shipping", "logistics", "e-commerce", "carriers", "tracking"]
+}
