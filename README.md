@@ -34,12 +34,27 @@ The plugin authenticates with Smart Send via OAuth — the first time you use a 
 
 ## Installation
 
+You need [Claude Code](https://code.claude.com/docs/en/setup) installed and authenticated.
+
+From inside Claude Code, run:
+
 ```text
 /plugin marketplace add smartsendio/claude-plugin
 /plugin install smartsend@smartsend
+/reload-plugins
 ```
 
-See Claude's [plugin installation guide](https://code.claude.com/docs/en/discover-plugins) for more.
+What each step does:
+
+1. `/plugin marketplace add smartsendio/claude-plugin` — registers this repository as a marketplace so Claude Code can see the plugin. No plugin is installed yet.
+2. `/plugin install smartsend@smartsend` — installs the `smartsend` plugin from the `smartsend` marketplace into your user scope (available across all your projects). To pick a different scope (project or local), run `/plugin` instead, open the **Discover** tab and select **smartsend** there.
+3. `/reload-plugins` — activates the plugin in your current session without a restart.
+
+On first use, Claude will prompt you to sign in to Smart Send via OAuth — log in with your existing account and approve access. No API keys to configure.
+
+To update later, run `/plugin marketplace update smartsend` followed by `/reload-plugins`. To remove the plugin, run `/plugin uninstall smartsend@smartsend`.
+
+See Claude's [plugin discovery guide](https://code.claude.com/docs/en/discover-plugins) for the full reference.
 
 ## What's in the plugin
 
