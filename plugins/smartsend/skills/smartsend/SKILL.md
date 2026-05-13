@@ -88,7 +88,7 @@ International shipments need customs data on the receiver and on each item:
 1. `search-shipments` by the user's reference (order number, receiver email, or tracking number).
 2. Read the matching shipment resource for full context (parties, parcels, current status).
 3. Read the `tracking` resource per parcel for the event timeline.
-4. Summarise in plain language: where the parcel is, what the next expected event is, and whether anything looks stuck. Present events in reverse chronological order (most recent first) with clear timestamps and locations. Use the `troubleshoot-delivery` MCP prompt if the situation needs diagnosis.
+4. Summarise in plain language: where the parcel is, what the next expected event is, and whether anything looks stuck. Present events in reverse chronological order (most recent first) with clear timestamps and locations. Use the `track-shipment` MCP prompt if the situation needs diagnosis.
 
 ### Reprint a label
 

@@ -98,7 +98,7 @@ Guided multi-step workflows you can start with a slash command:
 | Prompt | What it walks you through |
 | --- | --- |
 | `book-shipment` | Collect the address, define the parcels, select the service, handle customs if needed, and complete the booking. |
-| `troubleshoot-delivery` | Investigate a shipment's tracking events, compare expected vs. actual timeline, and identify the parcels that are stuck or late. |
+| `track-shipment` | Investigate a shipment's tracking events, compare expected vs. actual timeline, and identify the parcels that are stuck or late. |
 
 ### Skill
 
