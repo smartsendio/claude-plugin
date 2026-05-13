@@ -1,0 +1,20 @@
+{
+  "name": "smartsend",
+  "owner": {
+    "name": "Smart Send",
+    "email": "support@smartsend.io"
+  },
+  "description": "Official Smart Send plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "smartsend",
+      "source": "./plugins/smartsend",
+      "description": "Ship parcels with Smart Send — book shipments, compare rates, track packages, and manage service points across multiple carriers.",
+      "category": "shipping",
+      "tags": ["shipping", "logistics", "e-commerce", "carriers", "tracking"],
+      "homepage": "https://smartsend.io",
+      "repository": "https://github.com/smartsendio/claude-plugin",
+      "license": "MIT"
+    }
+  ]
+}

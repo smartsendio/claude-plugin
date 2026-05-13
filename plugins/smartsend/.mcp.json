@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "smart-send-docs": {
+      "type": "http",
+      "url": "https://docs.smartsend.io/mcp"
+    },
+    "smart-send": {
+      "type": "http",
+      "url": "https://app.smartsend.io/mcp"
+    }
+  }
+}
