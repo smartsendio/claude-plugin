@@ -60,7 +60,7 @@ See Claude's [plugin discovery guide](https://code.claude.com/docs/en/discover-p
 
 The plugin bundles two things:
 
-1. **An MCP connection** to the hosted Smart Send MCP server. This gives Claude tools, resources and prompts for talking to your Smart Send account.
+1. **An MCP connection** to the hosted Smart Send MCP server at `https://mcp.smartsend.io`. This gives Claude tools, resources and prompts for talking to your Smart Send account.
 2. **A skill** that teaches Claude *how* to use those tools well for everyday shipping work.
 
 ### MCP tools
