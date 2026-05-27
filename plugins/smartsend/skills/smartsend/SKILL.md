@@ -1,6 +1,6 @@
 ---
 name: smartsend
-description: Use this skill when booking, tracking, or managing shipments through Smart Send. Triggers on requests like "book a shipment", "send this parcel", "ship to <address>", "find a pickup point", "where is order X", "reprint label", "validate these addresses", or any other shipping workflow that involves the Smart Send MCP tools. Covers booking, address validation, service-point selection, templates, tracking lookups, and document retrieval. Do not use for general programming work or for non-Smart-Send shipping platforms.
+description: Use this skill when booking, tracking, or managing shipments through Smart Send. Triggers on requests like "book a shipment", "send this parcel", "ship to <address>", "find a pickup point", "where is order X", or "reprint label". Covers booking, service-point selection, templates, tracking lookups, and document retrieval. Do not use for general programming work or for non-Smart-Send shipping platforms.
 ---
 
 # Smart Send
@@ -13,41 +13,84 @@ Smart Send is a shipping aggregator. The user (a webshop, office or production c
 
 Smart Send's core philosophy is that **Smart Send handles the complexity, not the client**. Booking requests look simple from the outside because the complexity is dealt with on Smart Send's side. As a consequence, always include as much data as you have: detailed item descriptions, values, weights, customs information, duty and VAT amounts. The more data Smart Send receives, the better it can handle carrier requirements, customs declarations, and routing decisions on the user's behalf. Never skip optional fields to "keep things simple" — if the data is available, include it.
 
-Three principles matter for everything below:
+Two principles matter for everything below:
 
-1. **Every booking request has the same shape.** Sender, receiver, parcels, items, customs info — the *data structure is identical* whether the shipment goes via PostNord home delivery, GLS parcel shop or Bring international. Only three things actually change between carriers:
-   - `carrier_code` (e.g. `postnord`, `gls`, `bring`)
-   - `service_code` / method (e.g. home delivery, service point)
-   - `addons` (e.g. signature, flex delivery, age verification)
+1. **"Carrier" means agreement carrier.** The carrier you book with is the *agreement* carrier — not necessarily the carrier that physically handles every leg. A PostNord booking from Denmark to Norway might be picked up by PostNord DK, cross the border, and be delivered by Bring in Norway. The booking and tracking remain with PostNord.
 
-   You never need to "learn a new format" per carrier — pick a carrier+service+addons and fill in the same payload.
+2. **"Booking" is a real action with side effects that differ per service.** When you call `book-shipment`, Smart Send transmits the shipment electronically to the carrier, the carrier accepts it, and Smart Send returns unique **tracking numbers for each parcel** plus signed URLs to the shipping documents (label PDFs, customs invoices). Beyond that, the carrier-side effects depend on the chosen service *and* the team's configuration — booking may, for example, request a pickup from the carrier. Usually it does not, and in some cases a booking can later be voided, but **assume in general that a booked shipment cannot be cancelled**. Always confirm with the user before booking.
 
-2. **"Carrier" means agreement carrier.** The carrier you book with is the *agreement* carrier — not necessarily the carrier that physically handles every leg. A PostNord booking from Denmark to Norway might be picked up by PostNord DK, cross the border, and be delivered by Bring in Norway. The booking and tracking remain with PostNord.
+## Booking flow — decision tree
 
-3. **"Booking" is a real action with side effects that differ per service.** When you call `book-shipment`, Smart Send transmits the shipment electronically to the carrier, the carrier accepts it, and Smart Send returns unique **tracking numbers for each parcel** plus signed URLs to the shipping documents (label PDFs, customs invoices). Beyond that, the carrier-side effects depend on the chosen service *and* the team's configuration — booking may, for example, request a pickup from the carrier. Usually it does not, and in some cases a booking can later be voided, but **assume in general that a booked shipment cannot be cancelled**. Always confirm with the user before booking.
+Pick one of three paths. Do not run extra preflight checks "to be safe" — they cost tool calls and don't change the outcome.
 
-## Routes vs rates
+### Path A — service is already known → book directly
 
-Two different levels of shipping-option lookup:
+If the user (or a template, or a previous tool call) gives you a `carrier_code` and `service_code`, go straight to `book-shipment`. No `find-delivery-options`, no `validate-address`.
 
-- **Routes** (`smartsend://routes` resource): general, static reference — "PostNord offers service X from DK to SE." Does not consider team configuration, pricing, or parcel specifics. Use this for orientation: mapping carrier names to codes, listing what's available in principle.
-- **Rates** (`find-delivery-options` tool): live, dynamic lookup. Filters by the team's configuration (excluded services, carrier preferences), calculates prices from the team's pricing setup, estimates delivery windows, considers parcel dimensions and weight. Use this whenever you need to present actionable options to the user.
+`book-shipment` runs the same address and routing validation internally. Calling those tools first is duplicate work.
 
-Always use rates when the answer needs to be actionable. Use routes only for general reference.
+### Path B — service is unknown → `find-delivery-options` then `book-shipment`
 
-## The standard flow
+When the user hasn't named a service:
 
-Most shipping tasks follow the same five steps. Skip any step that doesn't apply.
+1. Call `find-delivery-options` with the receiver address and parcel details. It returns the services this team can actually book for this shipment, with `carrier_code`, `service_code`, optional addons, estimated cost, and estimated delivery days.
+2. Present 2–3 options ranked by relevance. Highlight a recommendation if the user signalled a preference (cheapest, fastest, sustainable).
+3. On confirmation, call `book-shipment` reusing the same `parties.receiver.address` block and copying `carrier_code` / `service_code` straight from the chosen option.
 
-1. **Discover what the team can ship.** Read the `smartsend://routes` resource if you need to map carrier names to codes or list available services/addons. Do this once per session, not per shipment.
+### Path C — bulk address cleanup (rare)
 
-2. **Validate addresses.** For anything beyond a single hand-typed address, call `validate-address` first. Catching a bad postal code here is free; catching it after booking costs the carrier's surcharge.
+Only use `validate-address` for standalone batch jobs — e.g. the user pastes a list of addresses and asks "are any of these wrong?". Never as a preflight before `find-delivery-options` or `book-shipment`; both already validate.
 
-3. **Find delivery options for the specific shipment.** Call `find-delivery-options` with the parties (sender + receiver) and parcels (weight, dimensions). It returns only the services/addons that are actually valid for this shipment given the team's carrier accounts. Present these to the user, ideally ranked, and let them pick.
+## Field-name cheat sheet
 
-4. **(If the user picked a service-point service)** Call `search-service-points` near the receiver address and let the user choose one. Pass the chosen service point's identifier as `parties.pickup` when booking. If no specific service point is provided, Smart Send routes to the nearest service point to the receiver's address.
+The Smart Send tools share a vocabulary. Use these exact names — do not invent synonyms from other shipping APIs:
 
-5. **Book.** Call `book-shipment` with the same parties + parcels, plus the chosen `carrier_code`, `service_code` and `addons`. The response contains the tracking numbers and document URLs. Surface both to the user.
+| Concept | Field name | Notes |
+|---|---|---|
+| Address street | `address_lines` | **Array** of 1–2 strings. Not `street`, not `street1`. |
+| Postal/ZIP | `postal_code` | Not `zip_code`. |
+| Country | `country` | ISO 3166-1 alpha-2 (`DK`, `SE`, `NO`, …). Not `country_code`. |
+| Person name | `name_lines` | **Array** of 1–2 strings. Not `name`. |
+| Carrier | `carrier_code` | Same name on input and output across all tools. |
+| Service | `service_code` | Same name on input and output across all tools. |
+
+## Canonical booking payload
+
+Copy this shape; replace values with real data. Omit any field you don't have — never fabricate.
+
+```json
+{
+  "shipments": [{
+    "reference": "ORDER-1234",
+    "delivery": {
+      "carrier_code": "postnord",
+      "service_code": "home"
+    },
+    "parties": {
+      "receiver": {
+        "address": {
+          "address_lines": ["Vesterlundvej 16"],
+          "postal_code": "6830",
+          "city": "Nørre Nebel",
+          "country": "DK"
+        },
+        "contact": {
+          "name_lines": ["Jeremias Wolff"],
+          "email": "jeremias@example.com",
+          "phone": "+4512345678"
+        }
+      }
+    },
+    "parcels": [{ "gross_weight": 0.5 }]
+  }]
+}
+```
+
+For service-point services, add `parties.pickup.service_point_code` (from `search-service-points`). For international shipments, see "Customs" below.
+
+## Routes resource
+
+The `smartsend://routes` resource is general, static reference — "PostNord offers service X from DK to SE." Read it at most once per session if you need to map carrier names to codes or list what's available in principle. Do **not** read it before every booking — `find-delivery-options` already filters to what this team can actually use.
 
 ## Templates
 
@@ -59,29 +102,34 @@ List templates with `smartsend://shipment-templates`; fetch a single one by URI 
 
 ### Single shipment ("ship this parcel to Anna")
 
-1. Validate the address.
-2. `find-delivery-options` with one parcel.
-3. Show the user the cheapest/fastest 2–3 options. If the user has a clear default, pick it.
-4. Confirm explicitly: *"I'm about to book a 2 kg parcel with PostNord home delivery to Anna at <address> — confirm?"*
-5. `book-shipment`. Surface tracking number + label URL.
+1. `find-delivery-options` with the receiver address and one parcel.
+2. Show the user the cheapest/fastest 2–3 options.
+3. Confirm: *"I'm about to book a 2 kg parcel with PostNord home delivery to Anna at <address> — confirm?"*
+4. `book-shipment`. Surface tracking number + label URL.
+
+### Service-point delivery
+
+If the chosen service has `is_pickup: true`:
+
+- Default: omit `parties.pickup` — Smart Send routes to the nearest service point to the receiver.
+- If the user wants to pick: call `search-service-points` with `carrier_code` + receiver address, present the closest 3–5, then pass the chosen `code` as `parties.pickup.service_point_code` when booking.
 
 ### Bulk booking from a list
 
 1. Parse the list into structured shipments (one per row).
-2. Run all addresses through `validate-address` in batches of up to 100. Stop and ask the user how to handle invalid ones — never fabricate fixes.
-3. If a template fits, use it; otherwise resolve service per shipment with `find-delivery-options`.
-4. Summarise: *"<N> shipments ready: <N1> PostNord home, <N2> GLS service point. Total estimated cost: <X>. Book all?"*
-5. On confirmation, book in one `book-shipment` call (it accepts multiple shipments).
+2. If a template fits, use it; otherwise resolve service per shipment with `find-delivery-options`.
+3. Summarise: *"<N> shipments ready: <N1> PostNord home, <N2> GLS service point. Total estimated cost: <X>. Book all?"*
+4. On confirmation, book in one `book-shipment` call (it accepts up to 100 shipments).
 
 ### International / customs shipments
 
 International shipments need customs data on the receiver and on each item:
-- **Incoterms** (DAP, DDP, ...) determine who pays customs duties. DAP = receiver pays, DDP = sender pays.
+- **Incoterms** (DAP, DDP, …) determine who pays customs duties. DAP = receiver pays, DDP = sender pays.
 - **Receiver identifiers**: `vat`, `eori`, `gb_eori` (UK), `voec` (Norway) — whichever the destination requires.
 - **Items**: `sku`, `description`, `quantity`, value (in minor units), currency, origin country, and HS/tariff codes when available.
 - **Content type**: commercial goods, returned goods, gift, documents, etc.
 
-`find-delivery-options` will filter out services the receiver country isn't eligible for. If required customs fields are missing, ask the user before booking — the carrier will reject the shipment otherwise.
+`find-delivery-options` filters out services the receiver country isn't eligible for. If required customs fields are missing, ask the user before booking — the carrier will reject the shipment otherwise.
 
 ### "Where is my order?"
 
@@ -104,9 +152,9 @@ When reporting booking results, always include the tracking number and reference
 
 ## Guardrails
 
-- **Never fabricate addresses, names, emails or phone numbers.** The Smart Send tools say so explicitly in their schemas. Missing data → ask the user or omit the field; do not guess.
+- **Never fabricate addresses, names, emails or phone numbers.** Missing data → ask the user or omit the field; do not guess.
 - **Always confirm before `book-shipment`.** Booking transmits to the carrier, generates tracking numbers, and may trigger further side effects depending on the service and team config (e.g. requesting a pickup). Some bookings can be voided afterwards, but treat cancellation as *not guaranteed* and get explicit user confirmation up front.
-- **Use ISO 3166-1 alpha-2 country codes** (`DK`, `SE`, `NO`, `FI`, `DE`, ...). Smart Send rejects everything else.
+- **Use ISO 3166-1 alpha-2 country codes** (`DK`, `SE`, `NO`, `FI`, `DE`, …). Smart Send rejects everything else.
 - **Weight in kg, dimensions in cm** by default. Override only if the user explicitly works in other units.
 - **Cost and delivery window are nullable.** `find-delivery-options` returns `null` for either when the team hasn't uploaded rate tables or when no standard delivery window is known. Don't invent values — say "estimate not available" instead.
 - **One team at a time.** All Smart Send data is team-scoped. If the user mentions a different team, ask them to switch before continuing.
