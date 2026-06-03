@@ -1,8 +1,12 @@
 # Smart Send for Claude
 
-**Who is this for?** This plugin is for small and medium-sized businesses that ship parcels — webshops, offices sending letters and packages, and small production companies handling fulfilment in-house. If you currently book your shipments by hand on carrier portals or your shop admin, Smart Send for Claude lets you do the same work by talking to Claude.
+A Claude Code plugin that gives Claude a comprehensive reference for managing shipping via Smart Send.
 
 Smart Send is a shipping platform that connects you to carriers like PostNord, GLS, Bring, Burd and Budbee. This Claude plugin wires Claude directly into your Smart Send account so it can find delivery options, book shipments, look up service points, troubleshoot deliveries and keep templates tidy — all from a chat.
+
+## Who is this intended for
+
+This plugin is for small and medium-sized businesses that ship parcels — webshops, offices sending letters and packages, and small production companies handling fulfilment in-house. If you currently book your shipments by hand on carrier portals or your shop admin, Smart Send for Claude lets you do the same work by talking to Claude.
 
 ## What you can ask Claude to do
 
@@ -15,20 +19,12 @@ Once installed, Claude can act as a shipping assistant inside your daily workflo
 - *"Make a shipment template for our standard 1 kg box with GLS."*
 - *"Print labels for every order that came in this morning."*
 
-## How Smart Send books shipments
-
-Two things are worth understanding before you start:
-
-- **Every booking request has the same shape.** Sender, receiver, parcels, items, customs info — the data structure is identical regardless of carrier. The only things that change per shipment are the `carrier_code`, the `service_code` (the carrier's specific delivery method) and the optional `addons` (signature, flex delivery, age verification, etc.). That means once you've described a shipment once, switching it from PostNord home delivery to GLS service point is a three-field change.
-- **Booking is a real action with real side effects, and the side effects differ per service.** When the plugin books a shipment, Smart Send registers it electronically with the carrier and the carrier generates a unique tracking number for each parcel. Shipping documents (labels, customs invoices) are created at the same time and are available as signed download URLs. Depending on the chosen service *and* the team's configuration, booking may also trigger additional carrier-side effects — for example, a pickup being requested from the carrier. Most of the time no pickup is requested, and some bookings can later be voided or simply ignored, but there is no general guarantee that a booked shipment can be cancelled. Treat every booking as final and confirm with the user first.
-
 ## Requirements
 
 Before installing the plugin, make sure you have:
 
 1. **A Smart Send account.** If you don't have one yet, sign up at [smartsend.io](https://www.smartsend.io/dashboard). The free plan is enough to try the plugin.
 2. **Connected carrier accounts.** Smart Send needs to know which carriers you have agreements with (PostNord, GLS, Bring, Burd, Budbee, etc.). Follow the in-app [onboarding guide](https://docs.smartsend.io/) to connect your carriers — the plugin can only book shipments with carriers you have already configured.
-3. **A Smart Send team.** All shipments belong to a team. If you're part of more than one team, make sure your active team is the one you want Claude to work in.
 
 The plugin authenticates with Smart Send via OAuth — the first time you use a tool, Claude will ask you to sign in and grant access. No API keys to copy around.
 
