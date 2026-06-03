@@ -6,7 +6,7 @@ Smart Send is a shipping platform that connects you to carriers like PostNord, G
 
 ## Who is this intended for
 
-This plugin is for small and medium-sized businesses that ship parcels — webshops, offices sending letters and packages, and small production companies handling fulfilment in-house. If you currently book your shipments by hand on carrier portals or your shop admin, Smart Send for Claude lets you do the same work by talking to Claude.
+Anyone interested in booking shipments or tracking parcels via AI.
 
 ## What you can ask Claude to do
 
@@ -21,12 +21,7 @@ Once installed, Claude can act as a shipping assistant inside your daily workflo
 
 ## Requirements
 
-Before installing the plugin, make sure you have:
-
-1. **A Smart Send account.** If you don't have one yet, sign up at [smartsend.io](https://www.smartsend.io/dashboard). The free plan is enough to try the plugin.
-2. **Connected carrier accounts.** Smart Send needs to know which carriers you have agreements with (PostNord, GLS, Bring, Burd, Budbee, etc.). Follow the in-app [onboarding guide](https://docs.smartsend.io/) to connect your carriers — the plugin can only book shipments with carriers you have already configured.
-
-The plugin authenticates with Smart Send via OAuth — the first time you use a tool, Claude will ask you to sign in and grant access. No API keys to copy around.
+Before installing the plugin, make sure you have an active [Smart Send account](https://www.smartsend.io/dashboard).
 
 ## Installation
 
@@ -40,17 +35,7 @@ From inside Claude Code, run:
 /reload-plugins
 ```
 
-What each step does:
-
-1. `/plugin marketplace add smartsendio/claude-plugin` — registers this repository as a marketplace so Claude Code can see the plugin. No plugin is installed yet.
-2. `/plugin install smartsend@smartsend` — installs the `smartsend` plugin from the `smartsend` marketplace into your user scope (available across all your projects). To pick a different scope (project or local), run `/plugin` instead, open the **Discover** tab and select **smartsend** there.
-3. `/reload-plugins` — activates the plugin in your current session without a restart.
-
 On first use, Claude will prompt you to sign in to Smart Send via OAuth — log in with your existing account and approve access. No API keys to configure.
-
-To update later, run `/plugin marketplace update smartsend` followed by `/reload-plugins`. To remove the plugin, run `/plugin uninstall smartsend@smartsend`.
-
-See Claude's [plugin discovery guide](https://code.claude.com/docs/en/discover-plugins) for the full reference.
 
 ## What's in the plugin
 
